@@ -125,24 +125,24 @@
             text-decoration: underline;
         }
 
-        /* New text color styles for win, lose, and tie */
+        /* New styles for win, lose, and tie */
         .win-text {
-            color: green;
+            color: #28a745; /* Green text for win */
         }
 
         .lose-text {
-            color: red;
+            color: #dc3545; /* Red text for lose */
         }
 
         .tie-text {
-            color: #d4aa00;
+            color: #d4aa00; /* Darker yellow text for tie */
         }
 
-        /* New style for sum display */
-        #player-sum {
-            font-size: 18px;
+        /* Add some margin for the responsible gambling message */
+        .responsible-message {
             margin-top: 10px;
-            color: #343a40;
+            font-size: 14px;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -157,9 +157,7 @@
         <div id="dealer-hand" class="hand"></div>
         <h2>Your Hand:</h2>
         <div id="player-hand" class="hand"></div>
-        <!-- New sum element for displaying the sum of player cards -->
-        <div id="player-sum">Sum: 0</div>
-
+        <div id="player-sum"></div> <!-- Added player sum display -->
         <button class="action-button hit-btn" id="hit-button">Hit</button>
         <button class="action-button stand-btn" id="stand-button">Stand</button>
     </div>
@@ -170,8 +168,8 @@
         <div id="final-dealer-hand" class="hand"></div>
         <h3>Your Hand:</h3>
         <div id="final-player-hand" class="hand"></div>
-        <p>Gambling can be addictive. Please play responsibly.</p>
         <button class="action-button reset-btn" id="reset-button">Reset Game</button>
+        <p class="responsible-message">Gambling can be addictive. Please play responsibly.</p> <!-- Responsible gambling message -->
     </div>
 
     <div id="start-screen">
@@ -210,6 +208,7 @@
             dealerHand = [drawCard(), drawCard()];
 
             updateHands();
+            updatePlayerSum(); // Update sum when game starts
             document.getElementById('game-board').style.display = 'block';
             document.getElementById('start-screen').style.display = 'none'; // Hide start screen
             document.getElementById('lose-screen').style.display = 'none'; // Ensure lose screen is hidden
@@ -228,7 +227,6 @@
         function updateHands() {
             document.getElementById('dealer-hand').innerHTML = dealerHand[0] + ' <span class="card">??</span>'; // Show dealer's first card
             document.getElementById('player-hand').innerHTML = playerHand.map(cardToHTML).join('');
-            updatePlayerSum(); // Update the sum of the player's hand
         }
 
         function cardToHTML(card) {
@@ -246,8 +244,8 @@
 
         function updatePlayerHand() {
             document.getElementById('player-hand').innerHTML = playerHand.map(cardToHTML).join('');
+            updatePlayerSum(); // Update the player's card sum
             const playerValue = getHandValue(playerHand);
-            updatePlayerSum(); // Update sum when player hits
             if (playerValue > 21) {
                 endGame(false); // Player busts
             } else if (playerValue === 21) {
@@ -268,18 +266,18 @@
         }
 
         function updatePlayerSum() {
-            const sum = getHandValue(playerHand);
-            document.getElementById('player-sum').innerText = 'Sum: ' + sum; // Display the sum of player's hand
+            const playerValue = getHandValue(playerHand);
+            document.getElementById('player-sum').innerText = `Sum: ${playerValue}`; // Show player's sum below the hand
         }
 
         function determineOutcome() {
             const playerValue = getHandValue(playerHand);
             const dealerValue = getHandValue(dealerHand);
 
-            if (playerValue > 21) {
-                return false; // Player busts
-            } else if (dealerValue > 21 || playerValue === 21) {
-                return true; // Dealer busts or player auto wins
+            if (dealerValue > 21) {
+                return true; // Player wins if dealer busts
+            } else if (playerValue > 21) {
+                return false; // Player loses if they bust
             } else if (playerValue === dealerValue) {
                 return 'tie'; // It's a tie
             } else {
@@ -289,25 +287,26 @@
 
         function endGame(result) {
             let resultMessage = '';
-            const resultElement = document.getElementById('result-message');
-
             if (result === true) {
                 resultMessage = 'You Win!';
-                resultElement.className = 'win-text'; // Green text for win
                 points += 10; // Add points for win
+                document.getElementById('lose-screen').classList.add('win'); // Green background for win
+                document.getElementById('result-message').classList.add('win-text'); // Green text for win
             } else if (result === false) {
                 resultMessage = 'You Lose!';
-                resultElement.className = 'lose-text'; // Red text for loss
                 points -= 10; // Deduct points for loss
+                document.getElementById('lose-screen').classList.add('lose'); // Red background for lose
+                document.getElementById('result-message').classList.add('lose-text'); // Red text for lose
             } else if (result === 'tie') {
                 resultMessage = 'It\'s a Tie!';
-                resultElement.className = 'tie-text'; // Yellow text for tie
+                document.getElementById('lose-screen').classList.add('tie'); // Yellow background for tie
+                document.getElementById('result-message').classList.add('tie-text'); // Darker yellow text for tie
             }
 
             document.getElementById('points').innerText = points;
             localStorage.setItem('points', points); // Save points to local storage
 
-            resultElement.innerText = resultMessage;
+            document.getElementById('result-message').innerText = resultMessage;
             document.getElementById('final-dealer-hand').innerHTML = dealerHand.map(cardToHTML).join('');
             document.getElementById('final-player-hand').innerHTML = playerHand.map(cardToHTML).join('');
 
@@ -316,6 +315,8 @@
         }
 
         document.getElementById('reset-button').onclick = function () {
+            document.getElementById('lose-screen').classList.remove('win', 'lose', 'tie'); // Remove background color classes
+            document.getElementById('result-message').classList.remove('win-text', 'lose-text', 'tie-text'); // Remove text color classes
             startGame();
         };
 
